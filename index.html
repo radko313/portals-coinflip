@@ -361,12 +361,11 @@
       tails: 0
     };
 
-    // Load stats from localStorage
-    const savedStats = localStorage.getItem('coinflip-stats');
-    if (savedStats) {
-      stats = JSON.parse(savedStats);
-      updateStatsDisplay();
-    }
+    // Auto-reset stats on load (stats reset when iframe is opened)
+    stats = { total: 0, heads: 0, tails: 0 };
+    localStorage.setItem('coinflip-stats', JSON.stringify(stats));
+    updateStatsDisplay();
+    document.getElementById('historyList').innerHTML = '';
 
     function flipCoin() {
       const coin = document.getElementById('coin');
