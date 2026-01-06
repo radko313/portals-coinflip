@@ -379,15 +379,22 @@
       // Clear previous result
       resultDisplay.innerHTML = '';
 
-      // Add flipping animation
-      coin.classList.add('flipping');
-
       // Random result
       const result = Math.random() < 0.5 ? 'heads' : 'tails';
+
+      // Add flipping animation
+      coin.classList.add('flipping');
 
       // Wait for animation
       setTimeout(() => {
         coin.classList.remove('flipping');
+
+        // Set final rotation to show correct side
+        if (result === 'heads') {
+          coin.style.transform = 'rotateY(0deg)';
+        } else {
+          coin.style.transform = 'rotateY(180deg)';
+        }
 
         // Update stats
         stats.total++;
