@@ -144,9 +144,65 @@
       box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
     }
 
+    .pick-section {
+      margin-bottom: 30px;
+    }
+
+    .pick-label {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #ffd700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .pick-buttons {
+      display: flex;
+      gap: 15px;
+    }
+
+    .pick-btn {
+      flex: 1;
+      padding: 20px;
+      font-size: 20px;
+      font-weight: 700;
+      border: 3px solid transparent;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+    }
+
+    .pick-btn.heads-btn {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      color: #1a1a2e;
+    }
+
+    .pick-btn.tails-btn {
+      background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+      color: #2c3e50;
+    }
+
+    .pick-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+    }
+
+    .pick-btn.selected {
+      border-color: #00ff88;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+      transform: scale(1.05);
+    }
+
+    .pick-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 15px;
       margin-bottom: 30px;
     }
@@ -200,6 +256,26 @@
       border: 2px solid #c0c0c0;
     }
 
+    .result-win {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+      border: 2px solid #00ff88;
+    }
+
+    .result-lose {
+      background: rgba(255, 71, 87, 0.2);
+      color: #ff4757;
+      border: 2px solid #ff4757;
+    }
+
+    .stat-value.wins {
+      color: #00ff88;
+    }
+
+    .stat-value.losses {
+      color: #ff4757;
+    }
+
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -239,12 +315,12 @@
       animation: slideIn 0.3s ease;
     }
 
-    .history-item.heads {
-      border-left-color: #ffd700;
+    .history-item.win {
+      border-left-color: #00ff88;
     }
 
-    .history-item.tails {
-      border-left-color: #c0c0c0;
+    .history-item.lose {
+      border-left-color: #ff4757;
     }
 
     @keyframes slideIn {
@@ -313,6 +389,14 @@
   <div class="container">
     <h1>🪙 Coin Flip</h1>
 
+    <div class="pick-section">
+      <div class="pick-label">Pick Your Side</div>
+      <div class="pick-buttons">
+        <button class="pick-btn heads-btn" id="pickHeads" onclick="selectSide('heads')">Heads</button>
+        <button class="pick-btn tails-btn" id="pickTails" onclick="selectSide('tails')">Tails</button>
+      </div>
+    </div>
+
     <div class="result-display" id="resultDisplay"></div>
 
     <div class="coin-container">
@@ -329,16 +413,20 @@
 
     <div class="stats">
       <div class="stat-box">
-        <div class="stat-label">Total Flips</div>
+        <div class="stat-label">Total</div>
         <div class="stat-value" id="totalFlips">0</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Heads</div>
-        <div class="stat-value" id="headsCount">0</div>
+        <div class="stat-label">Wins</div>
+        <div class="stat-value wins" id="winsCount">0</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Tails</div>
-        <div class="stat-value" id="tailsCount">0</div>
+        <div class="stat-label">Losses</div>
+        <div class="stat-value losses" id="lossesCount">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value" id="winRate">0%</div>
       </div>
     </div>
 
@@ -357,29 +445,60 @@
 
     let stats = {
       total: 0,
-      heads: 0,
-      tails: 0
+      wins: 0,
+      losses: 0
     };
 
-    // Auto-reset stats on load (stats reset when iframe is opened)
-    stats = { total: 0, heads: 0, tails: 0 };
+    let selectedSide = null;
+
+    // Auto-reset stats on load
+    stats = { total: 0, wins: 0, losses: 0 };
     localStorage.setItem('coinflip-stats', JSON.stringify(stats));
     updateStatsDisplay();
     document.getElementById('historyList').innerHTML = '';
+    updateFlipButton();
+
+    function selectSide(side) {
+      selectedSide = side;
+
+      // Update button styles
+      document.getElementById('pickHeads').classList.toggle('selected', side === 'heads');
+      document.getElementById('pickTails').classList.toggle('selected', side === 'tails');
+
+      updateFlipButton();
+    }
+
+    function updateFlipButton() {
+      const flipBtn = document.getElementById('flipBtn');
+      if (selectedSide) {
+        flipBtn.disabled = false;
+        flipBtn.textContent = `Flip (${selectedSide.toUpperCase()})`;
+      } else {
+        flipBtn.disabled = true;
+        flipBtn.textContent = 'Pick a Side First';
+      }
+    }
 
     function flipCoin() {
+      if (!selectedSide) return;
+
       const coin = document.getElementById('coin');
       const flipBtn = document.getElementById('flipBtn');
       const resultDisplay = document.getElementById('resultDisplay');
+      const pickHeads = document.getElementById('pickHeads');
+      const pickTails = document.getElementById('pickTails');
 
-      // Disable button during flip
+      // Disable buttons during flip
       flipBtn.disabled = true;
+      pickHeads.disabled = true;
+      pickTails.disabled = true;
 
       // Clear previous result
       resultDisplay.innerHTML = '';
 
       // Random result
       const result = Math.random() < 0.5 ? 'heads' : 'tails';
+      const won = result === selectedSide;
 
       // Add flipping animation
       coin.classList.add('flipping');
@@ -397,10 +516,10 @@
 
         // Update stats
         stats.total++;
-        if (result === 'heads') {
-          stats.heads++;
+        if (won) {
+          stats.wins++;
         } else {
-          stats.tails++;
+          stats.losses++;
         }
 
         // Save stats
@@ -409,36 +528,44 @@
 
         // Show result
         const resultText = document.createElement('div');
-        resultText.className = `result-text result-${result}`;
-        resultText.textContent = result === 'heads' ? '👑 HEADS!' : '⚡ TAILS!';
+        resultText.className = `result-text ${won ? 'result-win' : 'result-lose'}`;
+        resultText.textContent = won ? `YOU WIN! (${result.toUpperCase()})` : `YOU LOSE! (${result.toUpperCase()})`;
         resultDisplay.appendChild(resultText);
 
         // Add to history
-        addToHistory(result);
+        addToHistory(result, selectedSide, won);
 
         // Send to Portals
-        game.sendFlipResult(result);
+        game.sendBetResult(won, result, selectedSide);
 
-        // Re-enable button
-        flipBtn.disabled = false;
+        // Re-enable buttons and reset selection
+        pickHeads.disabled = false;
+        pickTails.disabled = false;
+        selectedSide = null;
+        pickHeads.classList.remove('selected');
+        pickTails.classList.remove('selected');
+        updateFlipButton();
       }, 1000);
     }
 
     function updateStatsDisplay() {
       document.getElementById('totalFlips').textContent = stats.total;
-      document.getElementById('headsCount').textContent = stats.heads;
-      document.getElementById('tailsCount').textContent = stats.tails;
+      document.getElementById('winsCount').textContent = stats.wins;
+      document.getElementById('lossesCount').textContent = stats.losses;
+
+      const winRate = stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) : 0;
+      document.getElementById('winRate').textContent = winRate + '%';
     }
 
-    function addToHistory(result) {
+    function addToHistory(result, picked, won) {
       const historyList = document.getElementById('historyList');
       const now = new Date();
       const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
       const item = document.createElement('div');
-      item.className = `history-item ${result}`;
+      item.className = `history-item ${won ? 'win' : 'lose'}`;
       item.innerHTML = `
-        <span class="history-result">${result === 'heads' ? '👑 HEADS' : '⚡ TAILS'}</span>
+        <span class="history-result">${won ? 'WIN' : 'LOSE'} - Picked ${picked.toUpperCase()}, Got ${result.toUpperCase()}</span>
         <span class="history-time">${time}</span>
       `;
 
@@ -452,7 +579,7 @@
 
     function resetStats() {
       if (confirm('Reset all stats?')) {
-        stats = { total: 0, heads: 0, tails: 0 };
+        stats = { total: 0, wins: 0, losses: 0 };
         localStorage.setItem('coinflip-stats', JSON.stringify(stats));
         updateStatsDisplay();
         document.getElementById('historyList').innerHTML = '';

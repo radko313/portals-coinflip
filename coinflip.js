@@ -42,12 +42,27 @@ class CoinFlipGame {
   }
 
   /**
-   * Send flip result to Portals
+   * Send flip result to Portals (legacy)
    */
   sendFlipResult(result) {
     const taskName = `${this.taskPrefix}_${result}`;
     this.sendTaskUpdate(taskName, 'SetNotActiveToCompleted');
     this.log('Flip result:', result);
+  }
+
+  /**
+   * Send bet result to Portals (win/lose)
+   */
+  sendBetResult(won, result, picked) {
+    // Send win or lose task
+    const outcomeTask = `${this.taskPrefix}_${won ? 'win' : 'lose'}`;
+    this.sendTaskUpdate(outcomeTask, 'SetNotActiveToCompleted');
+
+    // Also send the actual result (heads/tails)
+    const resultTask = `${this.taskPrefix}_${result}`;
+    this.sendTaskUpdate(resultTask, 'SetNotActiveToCompleted');
+
+    this.log('Bet result:', { won, result, picked });
   }
 
   /**
